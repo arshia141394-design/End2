@@ -76,8 +76,8 @@ async def commands(client, message):
 
             else:
                 await message.reply(
-                    "❌ خطا در اتصال."
-                )
+    f"❌ خطا در اتصال.\nکد پاسخ: {r.status_code}"
+)
 
         except Exception as e:
             await message.reply(
