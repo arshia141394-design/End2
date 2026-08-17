@@ -24,13 +24,103 @@ async def commands(client, message):
         )
         return
 
-    # ------------------ SEARCH ------------------
+            # ------------------ SEARCH ------------------
     if text.startswith("جستجو "):
 
         query = text.replace("جستجو ", "", 1).strip()
 
         if not query:
             await message.reply("🔎 لطفاً عبارت موردنظر را وارد کن.")
+            return
+
+        url = f"https://html.duckduckgo.com/html/?q={quote(query)}"
+
+        headers = {
+            "User-Agent": "Mozilla/5.0"
+        }
+
+        try:
+            for _ in range(3):
+                r = requests.get(
+                    url,
+                    headers=headers,
+                    timeout=10
+                )
+
+                if r.status_code == 200:
+                    break
+
+                import time
+                time.sleep(2)
+
+            if r.status_code == 200:
+
+                soup = BeautifulSoup(
+                    r.text,
+                    "html.parser"
+                )
+
+                results = soup.select(".result__title a")
+
+                if results:
+                    title = results[0].get_text(strip=True)
+                    link = results[0]["href"]
+
+                    await message.reply(
+                        f"🔎 {title}\n\n{link}"
+                    )
+                else:
+                    await message.reply(
+                        "❌ نتیجه‌ای پیدا نشد."
+                    )
+
+            else:
+                await message.reply(
+                    f"❌ خطا در اتصال.\nکد پاسخ: {r.status_code}"
+                )
+
+        except Exception as e:
+            await message.reply(
+                f"❌ خطا:\n{e}"
+            )
+        # ------------------ TRANSLATE ------------------
+    if text.startswith("ترجمه "):
+
+        sentence = text.replace("ترجمه ", "", 1).strip()
+
+        if not sentence:
+            await message.reply("🌍 لطفاً متن موردنظر را وارد کن.")
+            return
+
+        try:
+            from deep_translator import GoogleTranslator
+
+            target = "en" if any(
+                "\u0600" <= c <= "\u06FF" for c in sentence
+            ) else "fa"
+
+            result = GoogleTranslator(
+                source="auto",
+                target=target
+            ).translate(sentence)
+
+            await message.reply(
+                f"🌍 ترجمه:\n\n{result}"
+            )
+
+        except Exception as e:
+            await message.reply(
+                f"❌ خطا در ترجمه:\n{e}"
+            )
+
+        return
+        # ------------------ QUESTION ------------------
+    if text.startswith("سوال "):
+
+        query = text.replace("سوال ", "", 1).strip()
+
+        if not query:
+            await message.reply("❓ لطفاً سؤال را وارد کن.")
             return
 
         url = f"https://html.duckduckgo.com/html/?q={quote(query)}"
@@ -53,110 +143,34 @@ async def commands(client, message):
                     "html.parser"
                 )
 
-                results = soup.select(
-                    ".result__title a"
-                )
+                results = soup.select(".result__title a")
 
                 if results:
-
-                    title = results[0].get_text(
-                        strip=True
-                    )
-
-                    link = results[0]["href"]
+                    title = results[0].get_text(strip=True)
+                    link = results[0].get("href", "")
 
                     await message.reply(
-                        f"🔎 {title}\n\n{link}"
+                        f"❓ نتیجه سؤال:\n\n"
+                        f"{title}\n\n"
+                        f"{link}"
                     )
 
                 else:
                     await message.reply(
-                        "❌ نتیجه‌ای پیدا نشد."
+                        "❌ برای این سؤال نتیجه‌ای پیدا نشد."
                     )
 
             else:
                 await message.reply(
-    f"❌ خطا در اتصال.\nکد پاسخ: {r.status_code}"
-)
-
-        except Exception as e:
-            await message.reply(
-                f"❌ خطا:\n{e}"
-            )
-    if text.startswith("ترجمه"):
-        sentence = text.replace("ترجمه", "", 1).strip()
-
-        if not sentence:
-            await message.reply("🌍 لطفاً متن موردنظر را وارد کن.")
-            return
-
-        try:
-            from deep_translator import GoogleTranslator
-
-            result = GoogleTranslator(
-                source="auto",
-                target="en" if any("\u0600" <= c <= "\u06FF" for c in sentence) else "fa"
-            ).translate(sentence)
-
-            await message.reply(f"🌍 ترجمه:\n\n{result}")
-
-        except Exception as e:
-            await message.reply(f"❌ خطا در ترجمه:\n{e}")
-    # ------------------ QUESTION ------------------
-    if text.startswith("سوال "):
-
-        question = text.replace("سوال ", "", 1).strip()
-
-        if not question:
-            await message.reply("❓ لطفاً سؤال موردنظر را وارد کن.")
-            return
-
-        url = f"https://html.duckduckgo.com/html/?q={quote(question)}"
-
-        headers = {
-            "User-Agent": "Mozilla/5.0"
-        }
-
-        try:
-            r = requests.get(
-                url,
-                headers=headers,
-                timeout=10
-            )
-
-            if r.status_code == 200:
-
-                soup = BeautifulSoup(
-                    r.text,
-                    "html.parser"
-                )
-
-                results = soup.select(".result__snippet")
-
-                if results:
-                    answer = results[0].get_text(
-                        " ",
-                        strip=True
-                    )
-
-                    await message.reply(
-                        f"🤖 پاسخ:\n\n{answer}"
-                    )
-
-                else:
-                    await message.reply(
-                        "❌ پاسخی پیدا نشد."
-                    )
-
-            else:
-                await message.reply(
-                    "❌ خطا در اتصال."
+                    f"❌ خطا در اتصال: {r.status_code}"
                 )
 
         except Exception as e:
             await message.reply(
                 f"❌ خطا:\n{e}"
             )
+
+        return
 
                 
     else:
